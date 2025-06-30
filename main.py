@@ -16,7 +16,6 @@ async def main():
 
     # 🤖 Bot va Dispatcher
     bot = Bot(token=TOKEN)
-    )
     dp = Dispatcher(storage=storage)
 
     # 🗃 Jadvalni yaratamiz
@@ -37,5 +36,5 @@ async def main():
     print("✅ Bot ishga tushdi...")
     await dp.start_polling(bot)
 
-if __name__ == "__main_":
+if name == "__main_":
     asyncio.run(main())
