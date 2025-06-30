@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
+from aiogram.types import ParseMode
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
@@ -39,5 +39,5 @@ async def main():
     print("✅ Bot ishga tushdi...")
     await dp.start_polling(bot)
 
-if __name__ == "__main__":
+if __name__ == "__main_":
     asyncio.run(main())
