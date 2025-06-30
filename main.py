@@ -15,9 +15,7 @@ async def main():
     storage = MemoryStorage()
 
     # 🤖 Bot va Dispatcher
-    bot = Bot(
-        token=TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    bot = Bot(token=TOKEN)
     )
     dp = Dispatcher(storage=storage)
 
