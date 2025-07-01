@@ -54,12 +54,14 @@ async def select_review_time(callback: CallbackQuery, state: FSMContext):
 async def select_category(callback: CallbackQuery, state: FSMContext):
     category = callback.data
     data = await state.get_data()
+
     await save_user_settings(
         user_id=callback.from_user.id,
         wake_time=data["wake_time"],
         review_time=data["review_time"],
         category=category
     )
+
     await callback.message.edit_text(
         f"{hbold('✅ Muvaffaqiyatli saqlandi!')} Rejalaringizga sodiq bo‘ling! 💪"
     )

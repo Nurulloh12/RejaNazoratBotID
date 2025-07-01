@@ -9,6 +9,7 @@ from database.db import create_users_table
 from utils.scheduler import setup_scheduler
 from handlers import start, add_task, view_tasks, delete_task, settings, admin
 
+
 async def main():
     # 💾 FSM storage
     storage = MemoryStorage()
@@ -35,5 +36,6 @@ async def main():
     print("✅ Bot ishga tushdi...")
     await dp.start_polling(bot)
 
-if __name__ == "__main__":
+
+if name == "main":
     asyncio.run(main())
