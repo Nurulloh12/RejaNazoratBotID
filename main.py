@@ -1,41 +1,46 @@
 import asyncio
+import logging
+
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.enums.parse_mode import ParseMode
 
-from config import TOKEN
-from database.db import create_users_table
-from utils.scheduler import setup_scheduler
-from handlers import start, add_task, view_tasks, delete_task, settings, admin
+from config import BOT_TOKEN
+from handlers import start, referal, rating, account, help, info
+from middlewares.check_subs import CheckSubscriptionMiddleware  # kelajak uchun
 
+# Bot va Dispatcher
+bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(storage=MemoryStorage())
 
+# Routerlarni qo‘shish
+dp.include_routers(
+    start.router,
+    referal.router,
+    rating.router,
+    account.router,
+    help.router,
+    info.router
+)
+
+# Boshlanishda
+async def on_startup(bot: Bot):
+    logging.info("🚀 Bot ishga tushdi!")
+
+# To‘xtaganda
+async def on_shutdown(bot: Bot):
+    logging.info("🛑 Bot to‘xtadi.")
+
+# Asosiy ishga tushirish funksiyasi
 async def main():
-    # 💾 FSM storage
-    storage = MemoryStorage()
+    logging.basicConfig(level=logging.INFO)
+    
+    # Middleware ni hozircha o‘chirib qo‘yganmiz, keyin yoqamiz:
+    # dp.message.middleware(CheckSubscriptionMiddleware())
 
-    # 🤖 Bot va Dispatcher
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher(storage=storage)
-
-    # 🗃 Jadvalni yaratamiz
-    await create_users_table()
-
-    # 🧠 Routerlarni ulaymiz
-    dp.include_router(start.router)
-    dp.include_router(add_task.router)
-    dp.include_router(view_tasks.router)
-    dp.include_router(delete_task.router)
-    dp.include_router(settings.router)
-    dp.include_router(admin.router)
-
-    # ⏰ Scheduler (motivatsion xabarlar)
-    setup_scheduler(bot)
-
-    # ▶️ Botni ishga tushuramiz
-    print("✅ Bot ishga tushdi...")
+    await on_startup(bot)
     await dp.start_polling(bot)
-
+    await on_shutdown(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())

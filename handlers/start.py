@@ -1,68 +1,39 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.markdown import hbold
+from aiogram.types import Message
+from aiogram.filters import Command
+from aiogram.enums.chat_type import ChatType
 
-from keyboards.inline import time_keyboard, category_keyboard
-from database.db import save_user_settings, add_user
+from keyboards.user_kb import main_menu
+from database import get_user, add_user, update_stars
+from utils.functions import notify_admin_if_10_stars
 
 router = Router()
 
-# --- HOLATLAR ---
-class RegistrationState(StatesGroup):
-    wake_time = State()
-    review_time = State()
-    category = State()
+@router.message(Command("start"), F.chat.type == ChatType.PRIVATE)
+async def cmd_start(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    text_args = message.text.split()
 
-# --- /start komandasi ---
-@router.message(F.text == "/start")
-async def start_command(message: Message, state: FSMContext):
-    await add_user(message.from_user.id)  # Foydalanuvchini bazaga qo‘shamiz
+    # Referalni ajratib olish
+    ref_id = None
+    if len(text_args) > 1 and text_args[1].isdigit():
+        ref_id = int(text_args[1])
+        if ref_id == user_id:
+            ref_id = None  # O'zini o'ziga refer qilsa, hisoblanmaydi
+
+    # Foydalanuvchi bazada bormi?
+    user = await get_user(user_id)
+    if not user:
+        await add_user(user_id=user_id, username=username, invited_by=ref_id)
+
+        # Refererga yulduz qo‘shish
+        if ref_id:
+            new_stars = await update_stars(ref_id)
+            await notify_admin_if_10_stars(ref_id, new_stars, message.bot)
+
     await message.answer(
-        "👋 <b>Assalomu alaykum!</b>\n"
-        "⏰ Keling, kundalik eslatmalarni sozlaymiz!\n\n"
-        "Quyidan uyg‘onish vaqtini tanlang:",
-        reply_markup=time_keyboard("wake")
+        "🎉 <b>Stars Botga xush kelibsiz!</b>\n\n"
+        "👥 Do‘stlaringizni taklif qiling va ⭐️ yulduzlar to‘plang!",
+        reply_markup=main_menu()
     )
-    await state.set_state(RegistrationState.wake_time)
-
-# --- Uyg‘onish vaqti tanlanganda ---
-@router.callback_query(RegistrationState.wake_time)
-async def select_wake_time(callback: CallbackQuery, state: FSMContext):
-    wake_time = callback.data
-    await state.update_data(wake_time=wake_time)
-    await callback.message.edit_text(
-        "🌙 Endi baholash vaqtini tanlang:",
-        reply_markup=time_keyboard("review")
-    )
-    await state.set_state(RegistrationState.review_time)
-
-# --- Baholash vaqti tanlanganda ---
-@router.callback_query(RegistrationState.review_time)
-async def select_review_time(callback: CallbackQuery, state: FSMContext):
-    review_time = callback.data
-    await state.update_data(review_time=review_time)
-    await callback.message.edit_text(
-        "🎯 Endi yo‘nalishingizni tanlang:",
-        reply_markup=category_keyboard()
-    )
-    await state.set_state(RegistrationState.category)
-
-# --- Yo‘nalish tanlanganda ---
-@router.callback_query(RegistrationState.category)
-async def select_category(callback: CallbackQuery, state: FSMContext):
-    category = callback.data
-    data = await state.get_data()
-
-    await save_user_settings(
-        user_id=callback.from_user.id,
-        wake_time=data["wake_time"],
-        review_time=data["review_time"],
-        category=category
-    )
-
-    await callback.message.edit_text(
-        f"{hbold('✅ Muvaffaqiyatli saqlandi!')} Rejalaringizga sodiq bo‘ling! 💪"
-    )
-    await state.clear()
